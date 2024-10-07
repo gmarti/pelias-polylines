@@ -3,12 +3,12 @@ const through = require('through2');
 const model = require('pelias-model');
 const logger = require('pelias-logger').get('polyline');
 
-function document( source, layer, idprefix ){
+function document(source, layer, idprefix) {
 
   // validate args
-  if( _.isEmpty(source) ){ throw new Error('invalid source'); }
-  if( _.isEmpty(layer) ){ throw new Error('invalid layer'); }
-  if( _.isEmpty(idprefix) ){ throw new Error('invalid idprefix'); }
+  if (_.isEmpty(source)) { throw new Error('invalid source'); }
+  if (_.isEmpty(layer)) { throw new Error('invalid layer'); }
+  if (_.isEmpty(idprefix)) { throw new Error('invalid idprefix'); }
 
   /**
    * Used to track the UID of individual records passing through the stream
@@ -17,27 +17,27 @@ function document( source, layer, idprefix ){
    */
   var uid = 0;
 
-  return through.obj( function( geojson, _, next ){
+  return through.obj(function (geojson, _, next) {
     try {
 
       // uniq id
-      var id = [ idprefix, uid++ ].join(':');
+      var id = [idprefix, uid++].join(':');
 
       // create new instance of pelias/model
-      var doc = new model.Document( source, layer, id );
+      var doc = new model.Document(source, layer, id);
 
       // name
-      doc.setName( 'default', geojson.properties.name );
+      doc.setName('default', geojson.properties.name);
 
       // street
-      doc.setAddress( 'street', geojson.properties.name );
+      doc.setAddress('street', geojson.properties.name);
 
       // centroid
       var prop = geojson.properties.centroid;
       doc.setCentroid({ lon: prop[0], lat: prop[1] });
 
       // distance meta data (in meters)
-      doc.setMeta( 'distance', geojson.properties.distance );
+      doc.setMeta('distance', geojson.properties.distance);
 
       // bounding box
       doc.setBoundingBox({
@@ -51,11 +51,14 @@ function document( source, layer, idprefix ){
         }
       });
 
-      // push downstream
-      this.push( doc );
+      // polyline
+      doc.setAddendum('scalar', { 'polyline': geojson.properties.polyline })
 
-    } catch( e ){
-      logger.error( 'polyline document error', e );
+      // push downstream
+      this.push(doc);
+
+    } catch (e) {
+      logger.error('polyline document error', e);
     }
 
     next();
